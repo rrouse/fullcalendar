@@ -188,8 +188,8 @@ function View(element, calendar, viewName) {
 	---------------------------------------------------------------------------------*/
 
 	
-	function eventDrop(el, event, newStart, ev, ui) {
-		var undoMutation = mutateEvent(event, newStart, null);
+	function eventDrop(el, event, newStart, ev, ui, resource) {
+		var undoMutation = mutateEvent(event, newStart, null, resource);
 
 		trigger(
 			'eventDrop',
@@ -200,7 +200,8 @@ function View(element, calendar, viewName) {
 				reportEventChange(event._id);
 			},
 			ev,
-			ui
+			ui,
+            resource
 		);
 
 		reportEventChange(event._id);
@@ -239,7 +240,7 @@ function View(element, calendar, viewName) {
 	//
 	// Returns a function that can be called to undo all the operations.
 	//
-	function mutateEvent(event, newStart, newEnd) {
+	function mutateEvent(event, newStart, newEnd, resource) {
 		var oldAllDay = event._allDay;
 		var oldStart = event._start;
 		var oldEnd = event._end;
@@ -301,7 +302,7 @@ function View(element, calendar, viewName) {
 			));
 		}
 
-		return mutateEvents(eventsByID[event._id], clearEnd, newAllDay, dateDelta, durationDelta);
+		return mutateEvents(eventsByID[event._id], clearEnd, newAllDay, dateDelta, durationDelta, resource);
 	}
 
 
@@ -313,7 +314,7 @@ function View(element, calendar, viewName) {
 	//
 	// Returns a function that can be called to undo all the operations.
 	//
-	function mutateEvents(events, clearEnd, forceAllDay, dateDelta, durationDelta) {
+	function mutateEvents(events, clearEnd, forceAllDay, dateDelta, durationDelta, resource) {
 		var isAmbigTimezone = calendar.getIsAmbigTimezone();
 		var undoFunctions = [];
 
@@ -324,6 +325,8 @@ function View(element, calendar, viewName) {
 			var newAllDay = forceAllDay != null ? forceAllDay : oldAllDay;
 			var newStart = oldStart.clone();
 			var newEnd = (!clearEnd && oldEnd) ? oldEnd.clone() : null;
+
+            var oldResourceId = event.resource || '';
 
 			// NOTE: this function is responsible for transforming `newStart` and `newEnd`,
 			// which were initialized to the OLD values first. `newEnd` may be null.
@@ -369,12 +372,17 @@ function View(element, calendar, viewName) {
 			event.allDay = newAllDay;
 			event.start = newStart;
 			event.end = newEnd;
+            if (event.resource != resource && events.length == 1) {
+                // Change resource if this is not repeating event
+                event.resource = resource;
+            }
 			backupEventDates(event);
 
 			undoFunctions.push(function() {
 				event.allDay = oldAllDay;
 				event.start = oldStart;
 				event.end = oldEnd;
+                event.resource = oldResourceId;
 				backupEventDates(event);
 			});
 		});

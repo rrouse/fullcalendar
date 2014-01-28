@@ -39,6 +39,7 @@ function Calendar(element, instanceOptions) {
 	t.render = render;
 	t.destroy = destroy;
 	t.refetchEvents = refetchEvents;
+    t.refetchResources = refetchResources;
 	t.reportEvents = reportEvents;
 	t.reportEventChange = reportEventChange;
 	t.rerenderEvents = rerenderEvents;
@@ -47,6 +48,8 @@ function Calendar(element, instanceOptions) {
 	t.unselect = unselect;
 	t.prev = prev;
 	t.next = next;
+    t.largePrev = largePrev;
+    t.largeNext = largeNext;
 	t.prevYear = prevYear;
 	t.nextYear = nextYear;
 	t.today = today;
@@ -224,8 +227,10 @@ function Calendar(element, instanceOptions) {
 
 
 	EventManager.call(t, options);
+    ResourceManager.call(t, options);
 	var isFetchNeeded = t.isFetchNeeded;
 	var fetchEvents = t.fetchEvents;
+    var fetchResources = t.fetchResources;
 
 
 
@@ -504,6 +509,16 @@ function Calendar(element, instanceOptions) {
 		fetchAndRenderEvents();
 	}
 
+    function refetchResources() {
+        fetchResources(false, currentView);
+        // remove current view
+        //var viewName = currentView.name;
+        //currentView = false;
+
+        // show view with new resources
+        //changeView(viewName);
+    }
+
 
 	function rerenderEvents(modifiedEventID) { // can be called as an API method
 		clearEvents();
@@ -529,6 +544,7 @@ function Calendar(element, instanceOptions) {
 
 	function getAndRenderEvents() {
 		if (!options.lazyFetching || isFetchNeeded(currentView.start, currentView.end)) {
+            if (options['refetchResources']) refetchResources();
 			fetchAndRenderEvents();
 		}
 		else {
@@ -608,9 +624,18 @@ function Calendar(element, instanceOptions) {
 	function next() {
 		renderView(1);
 	}
-	
-	
-	function prevYear() {
+
+
+    function largePrev() {
+        renderView(-100);
+    }
+
+    function largeNext() {
+        renderView(100);
+    }
+
+
+    function prevYear() {
 		date.add('years', -1);
 		renderView();
 	}
